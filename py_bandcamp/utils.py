@@ -1,4 +1,5 @@
 import json
+
 from py_bandcamp.session import SESSION as requests
 
 
@@ -52,3 +53,25 @@ def get_props(d, props=None):
         if p['name'] in props or not props:
             data[p['name']] = p['value']
     return data
+
+
+def get_stream_data(url):
+    data = extract_ldjson_blob(url)
+    artist_data = data['byArtist']
+    album_data = data['inAlbum']
+    kws = data["keywords"]
+    if isinstance(kws, str):
+        kws = kws.split(", ")
+    result = {
+        "categories": data["@type"],
+        'album_name': album_data['name'],
+        'artist': artist_data['name'],
+        'image': data['image'],
+        "title": data['name'],
+        "url": url,
+        "tags": kws + data.get("tags", [])
+    }
+    for p in data['additionalProperty']:
+        if p['name'] == 'file_mp3-128':
+            result["stream"] = p["value"]
+    return result
